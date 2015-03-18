@@ -1,16 +1,11 @@
 # -*- coding: utf8 -*-
-""" This py3status module polls the weechat status via the relay 
-protocol and plugin and displays a custom string if there are hightlights 
+""" This py3status module polls the weechat status via the relay
+protocol and plugin and displays a custom string if there are hightlights
 The relay protocol implementation has been taken from qweechat. """
 
-import argparse
 import collections
-import os
-import select
-import shlex
 import socket
 import struct
-import sys
 from time import time
 import traceback
 import zlib
@@ -29,7 +24,7 @@ class Py3status:
 
     def get_highlights(self, i3s_output_list, i3s_config):
         response = {
-            'cached_until': time() + self.cache_timeout, 
+            'cached_until': time() + self.cache_timeout,
             'full_text': ''
         }
 
@@ -58,34 +53,34 @@ class Py3status:
 
         return response
 
-
     def _connect(self):
-            inet = socket.AF_INET6 if self.ipv6 else socket.AF_INET
-        #try:
+        inet = socket.AF_INET6 if self.ipv6 else socket.AF_INET
+        try:
             self.sock = socket.socket(inet, socket.SOCK_STREAM)
             self.sock.connect((self.hostname, self.port))
             return True
-        #except:
+        except:
             if self.sock:
                 self.sock.close()
             return False
 
     def _send(self, message):
-        #try:
+        try:
             message += '\n'
             self.sock.sendall(message.encode('utf-8'))
             return True
-        #except:
+        except:
             return False
 
     def _decode(self, message):
         try:
             proto = Protocol()
-            msgd = proto.decode(message,separator=', ')
+            msgd = proto.decode(message, separator=', ')
             return msgd
         except:
             traceback.print_exc()
             return False
+
 
 class WeechatObject:
     def __init__(self, objtype, value, separator='\n'):
@@ -168,10 +163,12 @@ class WeechatMessage:
                                                           self.msgid,
                                                           self.objects)
 
+
 class WeechatDict(collections.OrderedDict):
     def __str__(self):
         return '{%s}' % ', '.join(
             ['%s: %s' % (repr(key), repr(self[key])) for key in self])
+
 
 class Protocol:
     """Decode binary message received from WeeChat/relay."""
