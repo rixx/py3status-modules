@@ -22,11 +22,12 @@ class Py3status:
     port = 9008
     password = 'rike'
     symbol = ''
-    cache_timeout = 15
+    cache_timeout = 10
 
     def get_highlights(self, i3s_output_list, i3s_config):
         response = {
-            'cached_until': time() + self.cache_timeout
+            'cached_until': time() + self.cache_timeout, 
+            'full_text': ''
         }
 
         if not self._connect():
@@ -49,7 +50,7 @@ class Py3status:
                 return response
 
             if ("priority: 2" in msg) or ("priority: 3" in msg):
-                response['full_message'] = self.symbol
+                response['full_text'] = self.symbol
                 response['color'] = i3s_config['color_bad']
 
         return response
