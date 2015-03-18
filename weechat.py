@@ -21,7 +21,7 @@ class Py3status:
     hostname = 'cutebit.de'
     port = 9008
     password = 'rike'
-    symbol = 'messages!! '
+    symbol = ''
     cache_timeout = 15
 
     def get_highlights(self, i3s_output_list, i3s_config):
@@ -36,29 +36,24 @@ class Py3status:
         self._send("init password=" + self.password)
         self._send("hdata hotlist:gui_hotlist(*)")
 
-        buf = self.sock.recv(4096)
-        recvbuf = ''
+        recvbuf = self.sock.recv(4096)
+        self.sock.close()
 
-        if buf:
-            recvbuf += buf
-            while len(recvbuf) >= 4:
-                remainder = None
-                length = struct.unpack('>i', recvbuf[0:4])[0]
-                if len(recvbuf) < length:
-                    break
-                if length < len(recvbuf):
-                   # save beginning of another message
-                    remainder = recvbuf[length:]
-                recvbuf = recvbuf[0:length]
-                msg = str(self._decode(recvbuf))
-                if not msg:
-                    return response
-                if ("priority: 2" in msg) or ("priority: 3" in msg):
-                    response['full_message'] = self.symbol
-                    response['color'] = i3s_config['color_bad']
+        if recvbuf:
+            length = struct.unpack('>i', recvbuf[0:4])[0]
+            recvbuf = recvbuf[0:length]
+
+            msg = str(self._decode(recvbuf))
+
+            if not msg:
                 return response
 
-        self.sock.close()
+            if ("priority: 2" in msg) or ("priority: 3" in msg):
+                response['full_message'] = self.symbol
+                response['color'] = i3s_config['color_bad']
+
+        return response
+
 
     def _connect(self):
             inet = socket.AF_INET6 if self.ipv6 else socket.AF_INET
@@ -73,7 +68,8 @@ class Py3status:
 
     def _send(self, message):
         #try:
-            self.sock.sendall(message + '\n')
+            message += '\n'
+            self.sock.sendall(message.encode('utf-8'))
             return True
         #except:
             return False
@@ -197,7 +193,7 @@ class Protocol:
         if len(self.data) < 3:
             self.data = ''
             return ''
-        objtype = str(self.data[0:3])
+        objtype = str(self.data[0:3].decode())
         self.data = self.data[3:]
         return objtype
 
@@ -234,6 +230,7 @@ class Protocol:
             self.data = ''
             return 0
         value = struct.unpack('>i', self.data[0:4])[0]
+
         self.data = self.data[4:]
         return value
 
@@ -242,14 +239,14 @@ class Protocol:
         value = self._obj_len_data(1)
         if value is None:
             return None
-        return int(str(value))
+        return int(value.decode())
 
     def _obj_str(self):
         """Read a string in data (length on 4 bytes + content)."""
         value = self._obj_len_data(4)
         if value is None:
             return None
-        return str(value)
+        return value.decode()
 
     def _obj_buffer(self):
         """Read a buffer in data (length on 4 bytes + data)."""
@@ -260,14 +257,14 @@ class Protocol:
         value = self._obj_len_data(1)
         if value is None:
             return None
-        return '0x%s' % str(value)
+        return '0x%s' % value.decode()
 
     def _obj_time(self):
         """Read a time in data (length on 1 byte + value as string)."""
         value = self._obj_len_data(1)
         if value is None:
             return None
-        return int(str(value))
+        return int(value.decode())
 
     def _obj_hashtable(self):
         """
@@ -357,14 +354,16 @@ class Protocol:
         uncompressed = None
         # uncompress data (if it is compressed)
         compression = struct.unpack('b', self.data[4:5])[0]
+
         if compression:
             uncompressed = zlib.decompress(self.data[5:])
             size_uncompressed = len(uncompressed) + 5
-            uncompressed = '%s%s%s' % (struct.pack('>i', size_uncompressed),
-                                       struct.pack('b', 0), uncompressed)
+            u = struct.pack('>i', size_uncompressed) + struct.pack('b', 0)
+            uncompressed = u + uncompressed
             self.data = uncompressed
         else:
             uncompressed = self.data[:]
+
         # skip length and compression flag
         self.data = self.data[5:]
         # read id
