@@ -1,4 +1,7 @@
 # -*- coding: utf8 -*-
+""" This py3status module polls the weechat status via the relay 
+protocol and plugin and displays a custom string if there are hightlights 
+The relay protocol implementation has been taken from qweechat. """
 
 import argparse
 import collections
@@ -18,9 +21,9 @@ class Py3status:
     ipv6 = False
     sock = None
     has_quit = False
-    hostname = 'cutebit.de'
-    port = 9008
-    password = 'rike'
+    hostname = '<HOST>'
+    port = 9001
+    password = '<PASSWORD>'
     symbol = ''
     cache_timeout = 10
 
