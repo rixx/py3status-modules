@@ -22,38 +22,38 @@ class Py3status:
     symbol = ''
 
     def get_highlights(self, i3s_output_list, i3s_config):
-        response = {
+        status_response = {
             'cached_until': time() + self.cache_timeout,
             'full_text': ''
         }
 
         if not self._connect():
-            return response
+            return status_response
 
         self._send("init password=" + self.password)
         self._send("hdata hotlist:gui_hotlist(*)")
 
-        recvbuf = self.sock.recv(4096)
+        sock_message = self.sock.recv(4096)
         self.sock.close()
 
-        if recvbuf:
-            length = struct.unpack('>i', recvbuf[0:4])[0]
-            recvbuf = recvbuf[0:length]
-            msg = str(self._decode(recvbuf))
+        if sock_message:
+            length = struct.unpack('>i', sock_message[0:4])[0]
+            sock_message = sock_message[0:length]
+            message = str(self._decode(sock_message))
 
-            if not msg:
-                return response
+            if not message:
+                return status_response
 
-            if ("priority: 2" in msg) or ("priority: 3" in msg):
-                response['full_text'] = self.symbol
-                response['color'] = i3s_config['color_bad']
+            if ("priority: 2" in message) or ("priority: 3" in message):
+                status_response['full_text'] = self.symbol
+                status_response['color'] = i3s_config['color_bad']
 
-        return response
+        return status_response
 
     def _connect(self):
-        inet = socket.AF_INET6 if self.ipv6 else socket.AF_INET
+        protocol = socket.AF_INET6 if self.ipv6 else socket.AF_INET
         try:
-            self.sock = socket.socket(inet, socket.SOCK_STREAM)
+            self.sock = socket.socket(protocol, socket.SOCK_STREAM)
             self.sock.connect((self.hostname, self.port))
             return True
         except:
@@ -73,29 +73,29 @@ class Py3status:
     def _decode(message):
         try:
             proto = Protocol()
-            msgd = proto.decode(message, separator=', ')
-            return msgd
+            return proto.decode(message, separator=', ')
         except:
             traceback.print_exc()
             return False
 
 
 class WeechatObject:
-    def __init__(self, objtype, value, separator='\n'):
-        self.objtype = objtype
+    def __init__(self, object_type, value, separator='\n'):
+        self.object_type = object_type
         self.value = value
         self.separator = separator
         self.indent = '  ' if separator == '\n' else ''
-        self.separator1 = '\n%s' % self.indent if separator == '\n' else ''
+        self.separator_indent = '\n%s' % \
+                                self.indent if separator == '\n' else ''
 
     @staticmethod
     def _str_value(v):
         if type(v) is str and v is not None:
             return '\'%s\'' % v
-        return str(v)
+        return v
 
     def _str_value_hdata(self):
-        lines = ['%skeys: %s%s%spath: %s' % (self.separator1,
+        lines = ['%skeys: %s%s%spath: %s' % (self.separator_indent,
                                              str(self.value['keys']),
                                              self.separator,
                                              self.indent,
@@ -110,7 +110,7 @@ class WeechatObject:
         return '\n'.join(lines)
 
     def _str_value_infolist(self):
-        lines = ['%sname: %s' % (self.separator1, self.value['name'])]
+        lines = ['%sname: %s' % (self.separator_indent, self.value['name'])]
         for i, item in enumerate(self.value['items']):
             lines.append('  item %d:%s%s' % (
                 (i + 1), self.separator,
@@ -128,8 +128,8 @@ class WeechatObject:
             'hda': self._str_value_hdata,
             'inl': self._str_value_infolist,
         }
-        return '%s: %s' % (self.objtype,
-                           self._obj_cb.get(self.objtype,
+        return '%s: %s' % (self.object_type,
+                           self._obj_cb.get(self.object_type,
                                             self._str_value_other)())
 
 
