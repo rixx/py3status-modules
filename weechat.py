@@ -1,6 +1,6 @@
 # -*- coding: utf8 -*-
-""" This py3status module polls the weechat status via the relay
-protocol and plugin and displays a custom string if there are hightlights
+""" This py3status module polls the Weechat status via the relay
+protocol and plugin and displays a custom string if there are highlights
 The relay protocol implementation has been taken from qweechat. """
 
 import collections
@@ -12,15 +12,14 @@ import zlib
 
 
 class Py3status:
-
-    ipv6 = False
-    sock = None
+    cache_timeout = 10
     has_quit = False
     hostname = '<HOST>'
+    ipv6 = False
     port = 9001
     password = '<PASSWORD>'
+    sock = None
     symbol = ''
-    cache_timeout = 10
 
     def get_highlights(self, i3s_output_list, i3s_config):
         response = {
@@ -29,7 +28,6 @@ class Py3status:
         }
 
         if not self._connect():
-            print('not connected')
             return response
 
         self._send("init password=" + self.password)
@@ -41,7 +39,6 @@ class Py3status:
         if recvbuf:
             length = struct.unpack('>i', recvbuf[0:4])[0]
             recvbuf = recvbuf[0:length]
-
             msg = str(self._decode(recvbuf))
 
             if not msg:
@@ -72,7 +69,8 @@ class Py3status:
         except:
             return False
 
-    def _decode(self, message):
+    @staticmethod
+    def _decode(message):
         try:
             proto = Protocol()
             msgd = proto.decode(message, separator=', ')
@@ -90,7 +88,8 @@ class WeechatObject:
         self.indent = '  ' if separator == '\n' else ''
         self.separator1 = '\n%s' % self.indent if separator == '\n' else ''
 
-    def _str_value(self, v):
+    @staticmethod
+    def _str_value(v):
         if type(v) is str and v is not None:
             return '\'%s\'' % v
         return str(v)
@@ -136,6 +135,7 @@ class WeechatObject:
 
 class WeechatObjects(list):
     def __init__(self, separator='\n'):
+        super().__init__()
         self.separator = separator
 
     def __str__(self):
@@ -174,6 +174,7 @@ class Protocol:
     """Decode binary message received from WeeChat/relay."""
 
     def __init__(self):
+        self.data = None
         self._obj_cb = {
             'chr': self._obj_char,
             'int': self._obj_int,
@@ -317,7 +318,7 @@ class Protocol:
         """Read an info in data."""
         name = self._obj_str()
         value = self._obj_str()
-        return (name, value)
+        return name, value
 
     def _obj_infolist(self):
         """Read an infolist in data."""
@@ -352,7 +353,6 @@ class Protocol:
         self.data = data
         size = len(self.data)
         size_uncompressed = size
-        uncompressed = None
         # uncompress data (if it is compressed)
         compression = struct.unpack('b', self.data[4:5])[0]
 
@@ -390,10 +390,10 @@ def hex_and_ascii(data, bytes_per_line=10):
     for i in range(0, num_lines):
         str_hex = []
         str_ascii = []
-        for char in data[i*bytes_per_line:(i*bytes_per_line)+bytes_per_line]:
+        for char in data[i * bytes_per_line:(i * bytes_per_line) + bytes_per_line]:
             byte = struct.unpack('B', char)[0]
             str_hex.append('%02X' % int(byte))
-            if byte >= 32 and byte <= 127:
+            if 127 >= byte >= 32:
                 str_ascii.append(char)
             else:
                 str_ascii.append('.')
@@ -404,6 +404,7 @@ def hex_and_ascii(data, bytes_per_line=10):
 
 if __name__ == "__main__":
     from time import sleep
+
     x = Py3status()
     config = {
         'color_good': '#00FF00',
