@@ -60,8 +60,9 @@ class Py3status:
 
 
     def on_click(self, i3s_output_list, i3s_config, event):
-        t = self.notification_text.format(SSID=self.ssid, IP=self.ip)
-        subprocess.call(['notify-send', t])
+        if self.ssid:
+            t = self.notification_text.format(SSID=self.ssid, IP=self.ip)
+            subprocess.call(['notify-send', t])
 
 
 
