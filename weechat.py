@@ -135,7 +135,7 @@ class WeechatObject:
 
 class WeechatObjects(list):
     def __init__(self, separator='\n'):
-        super().__init__()
+        super(list, self).__init__()
         self.separator = separator
 
     def __str__(self):
