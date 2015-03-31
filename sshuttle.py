@@ -4,17 +4,20 @@ Start/stop sshuttle and show status.
 
 @author rixx
 """
+import os
 import subprocess
 import time
 
 
 class Py3status:
 
-    # available configuration parameters
-    cache_timeout = 10
+    # available configuration parameters.
+    cache_timeout = 30
+    color_good = None
+    color_bad = None
     hide_if_disconnected = False
-    host = 'cutebit'
-    ip = '88.198.169.75'
+    host = '<HOST>'
+    ip = '<IP>'
     pidfile = '/tmp/sshuttle'
     text_up = 'up'
     text_down = 'down'
@@ -39,10 +42,12 @@ class Py3status:
 
         if self.status == 'unconnected':
             response['full_text'] = self.text_down
-            response['color'] = i3s_config['color_bad']
+            response['color'] = self.color_bad if self.color_bad \
+                    else i3s_config['color_bad']
         elif self.status == 'connected':
             response['full_text'] = self.text_up
-            response['color'] = i3s_config['color_good']
+            response['color'] = self.color_good if self.color_good \
+                    else i3s_config['color_good']
         return response
 
     def _get_ip(self):
@@ -56,13 +61,17 @@ class Py3status:
             try:
                 pid = open(self.pidfile).read().strip()
                 subprocess.call(['kill', pid])
-                self.status = 'unconnected'
             except:
-                self.status = 'unconnected'
+                pass
+            self.status = 'unconnected'
         else:
+            uid = str(os.getuid())
+            auth_sock = '/run/user/' + uid + '/keyring/ssh'
+            e = dict(os.environ, **{"SSH_AUTH_SOCK": auth_sock})
+
             p = '--pidfile=' + self.pidfile
-            #subprocess.call(['/usr/local/bin/sshu'])
-            #subprocess.call(['sshuttle', p, '--daemon', '--dns', '-r', self.host, '0/0'])
+            subprocess.check_output(['sshuttle', p, '--daemon', '--dns', '-r',\
+                    self.host, '0/0'], env=e)
             self.status = 'connected'
         return None
 
