@@ -19,6 +19,20 @@ class Py3status:
         self.volume = self._get_volume()
         self.mute = self._is_mute()
 
+    def volume_control(self, i3s_output_list, i3s_config):
+        response = {'cached_until': time.time()}
+        self.volume = self._get_volume()
+        self.mute = self._is_mute()
+
+        if self.mute:
+            response['color'] = i3s_config['color_bad']
+            response['full_text'] = self.mute_text.format(volume=self.volume)
+        else:
+            response['color'] = i3s_config['color_good']
+            response['full_text'] = self.volume_text.format(volume=self.volume)
+
+        return response
+
     def on_click(self, i3s_output_list, i3s_config, event):
         buttons = (None, 'left', 'middle', 'right', 'up', 'down')
         try:
@@ -30,6 +44,8 @@ class Py3status:
             self._change_volume(button == 'up')
         else:
             self._toggle_mute()
+
+        subprocess.check_output(['killal', '-USR1', 'py3status'])
 
     def _change_volume(self, increase):
         """Change volume using amixer
@@ -56,20 +72,6 @@ class Py3status:
         else:
             attr = 'mute'
         subprocess.call(['amixer', '-q', 'sset', 'Master', attr])
-
-    def volume_control(self, i3s_output_list, i3s_config):
-        response = {'cached_until': time.time()}
-        self.volume = self._get_volume()
-        self.mute = self._is_mute()
-
-        if self.mute:
-            response['color'] = i3s_config['color_bad']
-            response['full_text'] = self.mute_text.format(volume=self.volume)
-        else:
-            response['color'] = i3s_config['color_good']
-            response['full_text'] = self.volume_text.format(volume=self.volume)
-
-        return response
 
 
 if __name__ == "__main__":

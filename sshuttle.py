@@ -73,7 +73,7 @@ class Py3status:
             subprocess.check_output(['sshuttle', p, '--daemon', '--dns', '-r',\
                     self.host, '0/0'], env=e)
             self.status = 'connected'
-        return None
+        subprocess.check_output(['killall', '-USR1', 'py3status'])
 
 
 if __name__ == "__main__":
