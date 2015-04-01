@@ -2,7 +2,7 @@
 """
 Volume control
 
-@author rixx
+@author rixx, inspired by player_control in py3status
 """
 
 import time
@@ -20,8 +20,6 @@ class Py3status:
         self.mute = self._is_mute()
 
     def on_click(self, i3s_output_list, i3s_config, event):
-        """
-        """
         buttons = (None, 'left', 'middle', 'right', 'up', 'down')
         try:
             button = buttons[event['button']]
@@ -37,14 +35,13 @@ class Py3status:
         """Change volume using amixer
         """
         sign = '%+' if increase else '%-'
-        delta = str(volume_tick) + sign
+        delta = str(self.volume_tick) + sign
         subprocess.call(['amixer', '-q', 'sset', 'Master', delta])
 
     def _get_volume(self):
         out = subprocess.check_output(['amixer', 'sget', 'Master']).decode()
         a = out.find('[')
         b = out.find(']')
-
         return int(out[a+1:b-1])
 
     def _is_mute(self):
@@ -54,11 +51,10 @@ class Py3status:
         return True
 
     def _toggle_mute(self):
-        if self.mute:
+        if self._is_mute():
             attr = 'unmute'
         else:
             attr = 'mute'
-
         subprocess.call(['amixer', '-q', 'sset', 'Master', attr])
 
     def volume_control(self, i3s_output_list, i3s_config):
