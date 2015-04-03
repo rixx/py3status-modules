@@ -36,7 +36,10 @@ class Py3status:
 
     def _change_brightness(self, increase):
         direction = '-inc' if increase else '-dec'
-        subprocess.check_output(['xbacklight', direction, str(self.tick)])
+        target = self._get_brightness() + self.tick if increase \
+                else self._get_brightness() - self.tick
+        target = int(self.tick * round(target / self.tick))
+        subprocess.check_output(['xbacklight', 'set', str(self.tick)])
 
     def _get_brightness(self):
         out = subprocess.check_output(['xbacklight', '-get']).decode()
