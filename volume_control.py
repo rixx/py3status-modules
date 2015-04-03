@@ -45,8 +45,6 @@ class Py3status:
         else:
             self._toggle_mute()
 
-        subprocess.check_output(['killal', '-USR1', 'py3status'])
-
     def _change_volume(self, increase):
         """Change volume using amixer
         """
