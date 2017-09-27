@@ -44,7 +44,8 @@ class Py3status:
 
     def _get_ssid(self):
         try:
-            ssid = subprocess.check_output(self.ssid_cmd.split()).decode().strip()
+            # ssid = subprocess.check_output(self.ssid_cmd.split()).decode().strip()
+            ssid = subprocess.check_output(self.ssid_cmd, shell=True).decode().strip()
         except:
             ssid = ''
 
