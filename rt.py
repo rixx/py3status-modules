@@ -3,12 +3,12 @@
 @author rixx
 """
 import fcntl
+import json
 import socket
 import struct
 import subprocess
 from time import time
 
-import json
 import bs4
 import requests
 
