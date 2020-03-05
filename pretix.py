@@ -9,19 +9,19 @@ import subprocess
 from time import time
 
 import json
-import bs4
 import requests
 
 
-
 class Py3status:
-    # TODO: use api/v1/organizers/{organizer_slug}/events/{event_slug}/quotas/{pk}/availability/ and a token
     # available configuration parameters
-    cache_timeout = 60
-    url = 'pretix.instance/control/event/organizer_slug/event_slug/quotas/my_quota'
-    login_url = 'pretix.instance/control/login'
-    user = ''
-    password = ''
+    # url = 'pretix.instance/api/v1/organizers/{organizer_slug}/events/{event_slug}/quotas/{pk}/availability/'
+    url = ''
+    instance = ''
+    organizer = ''
+    event = ''
+    quota = ''
+    token = ''
+    good_threshold = 50
 
     def check_tickets(self, i3s_output_list, i3s_config):
         response = {
@@ -30,22 +30,16 @@ class Py3status:
         }
 
         try:
-            client = requests.session()
-            client.get(self.login_url, verify=False)
+            url = 'https://{self.instance}/api/v1/organizers/{self.organizer}/events/{self.event}/quotas/{self.quota}/availability/'.format(self=self)
+            rsp = requests.get(url, headers={'Authorization': 'Token {self.token}'.format(self=self)}, verify=False)
 
-            csrftoken = client.cookies['pretix_csrftoken']
-            login_data = {'email': self.user, 'password': self.password, 'csrfmiddlewaretoken': csrftoken}
-            r = client.post(self.login_url, data=login_data, verify=False, headers=dict(Referer=self.login_url))
+            num = max(0, json.loads(rsp.content.decode()).get('available_number', 0))
 
-            r = client.get(self.url + '', verify=False)
-            soup = bs4.BeautifulSoup(r.content, 'html.parser')
-            num = json.loads(soup.find(id='quota-chart-data').get_text())[-1]['value']
-
-            if num > 50:
+            if num >= self.good_threshold:
                 response['color'] = i3s_config['color_good']
             else:
                 response['color'] = i3s_config['color_bad']
-        except:
+        except Exception as e:
             num = ''
             response['color'] = i3s_config['color_bad']
 
@@ -53,7 +47,7 @@ class Py3status:
         return response
 
     def on_click(self, i3s_output_list, i3s_config, event):
-        subprocess.call(['xdg-open', self.url])
+        subprocess.call(['xdg-open', 'https://{self.instance}/control/event/{self.organizer}/{self.event}/'.format(self=self)])
 
 
 if __name__ == "__main__":
