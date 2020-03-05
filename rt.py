@@ -50,7 +50,7 @@ class Py3status:
             num = ''
             response['color'] = i3s_config['color_bad']
 
-        response['full_text'] = ' {}'.format(num)
+        response['full_text'] = '🎟️{}'.format(num)
         return response
 
     def on_click(self, i3s_output_list, i3s_config, event):
