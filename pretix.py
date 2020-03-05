@@ -15,6 +15,7 @@ import requests
 class Py3status:
     # available configuration parameters
     # url = 'pretix.instance/api/v1/organizers/{organizer_slug}/events/{event_slug}/quotas/{pk}/availability/'
+    cache_timeout = 60
     url = ''
     instance = ''
     organizer = ''
