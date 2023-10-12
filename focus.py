@@ -2,11 +2,9 @@
 Use ~/.config/dotfiles/bin/focus start|stop|break, read status from /tmp/focus
 """
 from pathlib import Path
-import subprocess
 
 
 class Py3status:
-
     cache_timeout = 300
     client_id = None
     client_secret = None
