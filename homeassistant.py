@@ -27,6 +27,8 @@ class Py3status:
     threshold_good = None  # Value or list of values that indicate a good state
     threshold_degraded = None  # Value or list of values that indicate a degraded state
     numeric_thresholds = False  # Set to True to compare numeric values
+    ssid = None  # Optional SSID to check against
+    device = None  # Optional network device to check SSID on
 
     def post_config_hook(self):
         """
@@ -75,6 +77,19 @@ class Py3status:
 
         return state == threshold
 
+    def _get_current_ssid(self):
+        """Get current SSID using netctl"""
+        try:
+            output = subprocess.check_output(
+                ["sudo", "netctl-auto", "list"], stderr=subprocess.STDOUT
+            ).decode()
+            for line in output.split("\n"):
+                if line.startswith("*"):  # Active profile is marked with *
+                    return line.strip("* ")
+        except (subprocess.CalledProcessError, IndexError):
+            return None
+        return None
+
     def _get_state(self):
         """Query Home Assistant API for entity state"""
         if not all([self.instance, self.token, self.entity_id]):
@@ -97,6 +112,13 @@ class Py3status:
     def homeassistant(self, i3s_output_list, i3s_config):
         """Return response dict for py3status"""
         response = {"cached_until": time() + self.cache_timeout, "full_text": ""}
+
+        # Check if we should be active based on SSID
+        if self.ssid and self.device:
+            current_ssid = self._get_current_ssid()
+            if current_ssid != self.ssid:
+                response["full_text"] = ""  # Hide when not on specified network
+                return response
 
         state = self._get_state()
 
